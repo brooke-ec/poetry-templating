@@ -8,7 +8,7 @@ packages = [{ include = "poetry_plugin_templating", from = "src" }]
 
 [tool.poetry.dependencies]
 python = "^3.8.1"
-
+poetry = "^1.6.0"
 
 [tool.poetry.group.dev.dependencies]
 flake8-length = "^0.3.1"
@@ -19,3 +19,6 @@ isort = "^5.12.0"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.plugins."poetry.plugin"]
+templating = "poetry_plugin_templating.plugin:TemplatingPlugin"
