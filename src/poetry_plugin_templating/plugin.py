@@ -33,4 +33,8 @@ class TemplatingPlugin(ApplicationPlugin):
         io = event.io
         io.write_line("Setting up templating engine...", Verbosity.DEBUG)
 
-        engine = TemplatingEngine(io, command.poetry.pyproject)
+        TemplatingEngine(io, command.poetry.pyproject)
+
+        from poetry_plugin_templating.mixin import open_mixin
+
+        open_mixin.inject()
