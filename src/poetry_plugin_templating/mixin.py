@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import IO as IOType
 from typing import Any, BinaryIO, Callable, Optional, TextIO, cast
 
+from poetry.core.masonry.builder import Builder
+
 from poetry_plugin_templating.engine import TemplatingEngine
 
 
@@ -52,3 +54,9 @@ def open_mixin(path: Path, *args, **kwargs):
         processed = engine.process(binary_io.read().decode("utf-8"))
         return BytesIO(processed.encode("utf-8"))
     return src
+
+
+@Mixin.mixin(Builder, "build")
+def builder_mixin(*args, **kwargs):
+    with open_mixin:  # Replace Path.open method for duration of the build
+        return builder_mixin.original(*args, **kwargs)
