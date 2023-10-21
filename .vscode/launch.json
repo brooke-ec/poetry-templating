@@ -11,6 +11,15 @@
       "program": "${file}",
       "console": "integratedTerminal",
       "justMyCode": true
+    },
+    {
+      "name": "Poetry: Debug Build",
+      "type": "python",
+      "request": "launch",
+      "module": "poetry",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "args": ["build"]
     }
   ]
 }
