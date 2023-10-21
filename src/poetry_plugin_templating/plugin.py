@@ -1,6 +1,7 @@
 import logging
 from io import BytesIO, StringIO
 from pathlib import Path
+from tarfile import TarFile, TarInfo
 from typing import IO as IOType
 from typing import BinaryIO, TextIO, cast
 
@@ -29,23 +30,31 @@ def builder_mixin(builder: Builder, *args, **kwargs):
 
     # Define replacement for Path.open method
     @Mixin.mixin(Path, "open")
-    def open_mixin(path: Path, *args, **kwargs) -> IOType:
-        src: IOType = open_mixin.original(path, *args, **kwargs)
+    def open_mixin(path: Path, mode: str = "r", *args, **kwargs) -> IOType:
+        src: IOType = open_mixin.original(path, mode, *args, **kwargs)
 
         if not engine.should_process(path):
             return src
 
         # Process file, considering if it was opened in binary mode
-        if src.mode == "r":
+        if mode == "r":
             text_io: TextIO = cast(TextIO, src)
             processed = engine.process(text_io.read(), path)
             return StringIO(processed)
-        if src.mode == "rb":
+        if mode == "rb":
             binary_io: BinaryIO = cast(BinaryIO, src)
             text = binary_io.read().decode(engine.encoding)
             processed = engine.process(text, path)
             return BytesIO(processed.encode(engine.encoding))
         return src  # Do not process files opened with write capabilities
 
-    with open_mixin:  # Inject mixin for duration of the build
+    # Define replacement for TarFile.gettarinfo method
+    @Mixin.mixin(TarFile, "gettarinfo")
+    def tar_info_mixin(tarfile, path, *args, **kwargs) -> TarInfo:
+        info: TarInfo = tar_info_mixin.original(tarfile, path, *args, **kwargs)
+        if engine.should_process(path):
+            info.size = len(Path(path).read_bytes())
+        return info
+
+    with open_mixin, tar_info_mixin:  # Inject mixin for duration of the build
         return builder_mixin.original(builder, *args, **kwargs)
