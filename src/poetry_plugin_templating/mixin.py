@@ -138,7 +138,8 @@ def matches_any(path: Path, patterns: list[str]) -> bool:
     bool
         True if any of the patterns matched against the path.
     """
-    return any(path.match(p) for p in patterns)
+    normalized = Path(path.as_posix().lower())
+    return any(normalized.match(p.lower().strip("/")) for p in patterns)
 
 
 def get_relative(path: Path, root: str) -> Path:
