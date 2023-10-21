@@ -1,4 +1,4 @@
-__version__ = "${version}"
+__version__ = "${'version'}"
 
 CONFIG_TABLE = "poetry_templating"
 DEFAULT_ENCODING = "utf-8"

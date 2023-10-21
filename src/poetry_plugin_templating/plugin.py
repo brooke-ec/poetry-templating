@@ -39,12 +39,12 @@ def builder_mixin(builder: Builder, *args, **kwargs):
         # Process file, considering if it was opened in binary mode
         if mode == "r":
             text_io: TextIO = cast(TextIO, src)
-            processed = engine.process(text_io.read(), path)
+            processed = engine.evaluate_file(text_io.read(), path)
             return StringIO(processed)
         if mode == "rb":
             binary_io: BinaryIO = cast(BinaryIO, src)
             text = binary_io.read().decode(engine.encoding)
-            processed = engine.process(text, path)
+            processed = engine.evaluate_file(text, path)
             return BytesIO(processed.encode(engine.encoding))
         return src  # Do not process files opened with write capabilities
 

@@ -1,11 +1,15 @@
+from __future__ import annotations
+
 import logging
 import os
 import re
-from typing import Optional
+from re import Match, Pattern
+from typing import Callable, List, Optional, Union
 
 from poetry.core.pyproject.toml import PyProjectTOML
 
 from poetry_plugin_templating import DEFAULT_ENCODING, DEFAULT_EXCLUDE, DEFAULT_INCLUDE
+from poetry_plugin_templating.error import TemplatingError
 from poetry_plugin_templating.util import (
     StrPath,
     get_configuration,
@@ -20,10 +24,10 @@ _log = logging.getLogger(__name__)
 
 
 class TemplatingEngine:
-    """The Templating Engine class is responsible for processing strings and substituting template slots with their resolved values."""
+    """The Templating Engine class is responsible for processing strings and substituting template slots with their evaluated values."""
 
     def __init__(self, pyproject: PyProjectTOML) -> None:
-        """The Templating Engine class is responsible for processing strings and substituting template slots with their resolved values.
+        """The Templating Engine class is responsible for processing strings and substituting template slots with their evaluated values.
 
         Parameters
         ----------
@@ -42,10 +46,10 @@ class TemplatingEngine:
 
     def should_process(self, path: StrPath) -> bool:
         rel = get_relative(path, self.root)
-        return matches_any(rel, self.include) or matches_any(rel, self.exclude)
+        return matches_any(rel, self.include) and not matches_any(rel, self.exclude)
 
-    def process(self, data: str, path: Optional[StrPath] = None) -> str:
-        """Process the provided data, substituting template slots with their resolved values.
+    def evaluate_file(self, data: str, path: Optional[StrPath] = None) -> str:
+        """Process the provided data, substituting template slots with their evaluated values.
 
         Parameters
         ----------
@@ -62,6 +66,78 @@ class TemplatingEngine:
         if path is not None:
             path = get_relative(path, self.root)
             _log.debug("Templating Engine Processing '%s'", path.as_posix())
+            str_path = str(path)
 
-        data = RE_TEMPLATE_SLOT.sub("TEMPLATED!!!", data)
-        return data
+            # Check if file is in cache
+            if str_path in self.cache:
+                return self.cache[str_path]
+
+        # Process one line at a time
+        lines: List[str] = []
+        ctx = EvaluationContext(1, path, self)
+        for line in data.split("\n"):
+            lines.append(ctx.evaluate_string(line))
+            ctx.line += 1
+
+        result = "\n".join(lines)
+
+        # Add to cache
+        if path is not None:
+            self.cache[str(path)] = result
+        return result
+
+
+class EvaluationContext:
+    def __init__(
+        self,
+        line: int,
+        path: Optional[StrPath],
+        engine: TemplatingEngine,
+    ) -> None:
+        self.engine = engine
+        self.path = path
+        self.line = line
+
+    def evaluate_string(self, data: str):
+        return RE_TEMPLATE_SLOT.sub(self._evaluate_slot, data)
+
+    def _evaluate_slot(self, match: re.Match) -> str:
+        content = match.group(1)
+        for construct in Construct.constructs:
+            check = construct.pattern.match(content)
+            if check is not None:
+                try:
+                    return construct.handler(check, self)
+                except Exception as e:
+                    if isinstance(e, TemplatingError):
+                        raise
+                    raise TemplatingError(self, e) from e
+        raise TemplatingError(self, "Invalid Syntax")
+
+
+class Construct:
+    constructs: List["Construct"] = []
+
+    def __init__(
+        self, pattern: Pattern, handler: Callable[[Match, EvaluationContext], str]
+    ) -> None:
+        Construct.constructs.append(self)
+        self.handler = handler
+        self.pattern = pattern
+
+    @staticmethod
+    def construct(
+        pattern: Union[Pattern, str]
+    ) -> Callable[[Callable[[Match, EvaluationContext], str]], Construct]:
+        if isinstance(pattern, str):
+            pattern = re.compile(pattern)
+
+        def wrapper(func: Callable[[Match, EvaluationContext], str]) -> Construct:
+            return Construct(pattern, func)
+
+        return wrapper
+
+
+@Construct.construct("^[\"'](.+)[\"']$")
+def literal_construct(match: Match, ctx: EvaluationContext) -> str:
+    return ctx.evaluate_string(match.group(1))
