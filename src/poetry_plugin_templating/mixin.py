@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from io import BytesIO, StringIO
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import IO as IOType
+from typing import Any, BinaryIO, Callable, Optional, TextIO, cast
 
-from poetry_plugin_templating.engine import TemplatingReader
+from poetry_plugin_templating.engine import TemplatingEngine
 
 
 class Mixin:
@@ -38,6 +40,15 @@ class Mixin:
 
 @Mixin.mixin(Path, "open")
 def open_mixin(path: Path, *args, **kwargs):
-    src = open_mixin.original(path, *args, **kwargs)
-    reader = TemplatingReader(None, src)  # type: ignore
-    return reader
+    src: IOType = open_mixin.original(path, *args, **kwargs)
+    engine = TemplatingEngine(None, None)  # type: ignore
+
+    if src.mode == "r":
+        text_io: TextIO = cast(TextIO, src)
+        processed = engine.process(text_io.read())
+        return StringIO(processed)
+    if src.mode == "rb":
+        binary_io: BinaryIO = cast(BinaryIO, src)
+        processed = engine.process(binary_io.read().decode("utf-8"))
+        return BytesIO(processed.encode("utf-8"))
+    return src
