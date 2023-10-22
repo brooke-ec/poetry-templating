@@ -10,7 +10,7 @@ from typing import Callable, List, Optional, Union
 from poetry.core.pyproject.toml import PyProjectTOML
 
 from poetry_templating import DEFAULT_ENCODING, DEFAULT_EXCLUDE, DEFAULT_INCLUDE
-from poetry_templating.error import TemplatingError
+from poetry_templating.error import EvaluationError
 from poetry_templating.util import (
     StrPath,
     get_configuration,
@@ -117,10 +117,10 @@ class EvaluationContext:
                 try:
                     return construct.handler(check, self)
                 except Exception as e:
-                    if isinstance(e, TemplatingError):
+                    if isinstance(e, EvaluationError):
                         raise
-                    raise TemplatingError(self, e) from e
-        raise TemplatingError(self, "Invalid Syntax")
+                    raise EvaluationError(self, e) from e
+        raise EvaluationError(self, "Invalid Syntax")
 
 
 class Construct:
@@ -173,7 +173,7 @@ def file_construct(match: Match, ctx: EvaluationContext) -> str:
         path = os.path.join(ctx.engine.root, path[1:])
     else:
         if ctx.path is None:
-            raise TemplatingError(ctx, "Relative paths are not permitted in this context")
+            raise EvaluationError(ctx, "Relative paths are not permitted in this context")
 
     with open(path, "r", encoding=ctx.engine.encoding) as f:
         return ctx.engine.evaluate_file(f.read(), path)

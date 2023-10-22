@@ -9,6 +9,7 @@ from poetry.console.application import Application
 from poetry.core.masonry.builder import Builder
 from poetry.plugins.application_plugin import ApplicationPlugin
 
+from poetry_templating.error import TemplatingError
 from poetry_templating.util import Mixin
 
 _log = logging.getLogger(__name__)
@@ -35,23 +36,31 @@ def builder_mixin(builder: Builder, *args, **kwargs):
         in_cache = relative in engine.cache
         writable = mode not in ("r", "rb")
 
-        if in_cache and not writable:
-            evaluated = engine.cache[relative]
-        else:
-            src: IOType = open_mixin.original(path, mode, *args, **kwargs)
-            if writable or not engine.should_process(path):
-                return src
+        try:
+            if in_cache and not writable:
+                evaluated = engine.cache[relative]
+            else:
+                src: IOType = open_mixin.original(path, mode, *args, **kwargs)
+                if writable or not engine.should_process(path):
+                    return src
 
-            raw: Union[str, bytes] = src.read()
-            if isinstance(raw, bytes):
-                raw = cast(bytes, raw).decode(engine.encoding)
-            evaluated = engine.evaluate_file(raw, path)  # type: ignore
+                raw: Union[str, bytes] = src.read()
+                if isinstance(raw, bytes):
+                    raw = cast(bytes, raw).decode(engine.encoding)
+                evaluated = engine.evaluate_file(raw, path)  # type: ignore
 
-        # Process file, considering if it was opened in binary mode
-        if mode == "r":
-            return StringIO(evaluated)
-        else:
-            return BytesIO(evaluated.encode(engine.encoding))
+            # Process file, considering if it was opened in binary mode
+            if mode == "r":
+                return StringIO(evaluated)
+            else:
+                return BytesIO(evaluated.encode(engine.encoding))
+
+        except Exception as e:
+            if isinstance(e, TemplatingError):
+                raise
+            raise TemplatingError(
+                f'Error processing template: {e}\n  File "{relative}"'
+            ) from e
 
     # Define replacement for TarFile.gettarinfo method
     @Mixin.mixin(TarFile, "gettarinfo")
