@@ -22,6 +22,9 @@ from poetry_templating.util import (
 
 RE_TEMPLATE_SLOT = re.compile(r"(?:#\s*)?\${(.+)}")
 
+RE_DISABLE = re.compile(r"^\s*#\s*templating: off\s*$", re.IGNORECASE)
+RE_ENABLE = re.compile(r"^\s*#\s*templating: on\s*$", re.IGNORECASE)
+
 _log = logging.getLogger(__name__)
 
 
@@ -78,11 +81,25 @@ class TemplatingEngine:
                 return self.cache[path]
 
         # Process one line at a time
+        enabled = True
         lines: List[str] = []
-        ctx = EvaluationContext(1, path, self)
+        ctx = EvaluationContext(0, path, self)
         for line in data.split("\n"):
-            lines.append(ctx.evaluate_string(line))
             ctx.line += 1
+
+            # Check for on/off comment
+            if RE_DISABLE.match(line):
+                enabled = False
+                continue
+            if RE_ENABLE.match(line):
+                enabled = True
+                continue
+
+            # Process line
+            if enabled:
+                lines.append(ctx.evaluate_string(line))
+            else:
+                lines.append(line)
 
         result = "\n".join(lines)
 
