@@ -24,6 +24,7 @@ RE_TEMPLATE_SLOT = re.compile(r"(?:#\s*)?\${(.+)}")
 
 RE_DISABLE = re.compile(r"^\s*#\s*templating: off\s*$", re.IGNORECASE)
 RE_ENABLE = re.compile(r"^\s*#\s*templating: on\s*$", re.IGNORECASE)
+RE_DELETE = re.compile(r"#\s*templating: delete", re.IGNORECASE)
 
 _log = logging.getLogger(__name__)
 
@@ -97,7 +98,11 @@ class TemplatingEngine:
 
             # Process line
             if enabled:
-                lines.append(ctx.evaluate_string(line))
+                # Skip if ends with delete comment
+                if RE_DELETE.search(line):
+                    continue
+
+                lines.append(ctx.evaluate_string(line))  # evaluate slots
             else:
                 lines.append(line)
 
