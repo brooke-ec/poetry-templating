@@ -158,10 +158,12 @@ def literal_construct(match: Match, ctx: EvaluationContext) -> str:
 
 @Construct.construct(r"^pyproject((?:\.[^.]+)+)?$")
 def pyproject_construct(match: Match, ctx: EvaluationContext) -> str:
-    if match.group(1) is None:
+    path = match.group(1)
+
+    if path is None:
         return str(ctx.engine.pyproject.data)
 
-    result = traverse(ctx.engine.pyproject.data, match.group(1)[1:])
+    result = traverse(ctx.engine.pyproject.data, path[1:])
     return str(result)
 
 
@@ -181,3 +183,16 @@ def file_construct(match: Match, ctx: EvaluationContext) -> str:
 
     with open(path, "r", encoding=ctx.engine.encoding) as f:
         return ctx.engine.evaluate_file(f.read(), path)
+
+
+@Construct.construct(r"^env(?:\.([^\.\s]+))?$")
+def environ_construct(match: Match, ctx: EvaluationContext) -> str:
+    key = match.group(1)
+
+    if key is None:
+        return str(dict(os.environ))
+
+    if key not in os.environ:
+        raise EvaluationError(ctx, f"No environment variable '{key}'")
+
+    return os.environ[key]
