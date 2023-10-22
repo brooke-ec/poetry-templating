@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from poetry.core.pyproject.toml import PyProjectTOML
 
@@ -151,3 +151,34 @@ def get_relative(path: StrPath, root: str) -> Path:
         return resolved.relative_to(root)
     except ValueError:
         return resolved
+
+
+def traverse(
+    structure: Union[Dict[str, Any], list[Any]],
+    path: Union[str, List[str]],
+) -> Any:
+    if isinstance(path, str):
+        path = path.split(".")
+
+    current = structure
+    for i, step in enumerate(path):
+        if isinstance(current, dict):  # Handle dictionaries
+            if step not in current:
+                raise KeyError(f"{'.'.join(path[:i+1])} does not exist")
+            current = current[step]
+        elif isinstance(current, list):  # Handle lists
+            try:
+                index = int(step)
+            except ValueError:
+                raise ValueError(f"'{step}' is not a valid list index")
+
+            if index >= len(current):
+                raise IndexError(
+                    f"{index} is out of range for list at {'.'.join(path[:i])}"
+                )
+
+            current = current[index]
+        else:
+            raise ValueError(f"Expected list or dictionary at {'.'.join(path[:i])}")
+
+    return current

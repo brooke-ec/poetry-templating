@@ -16,6 +16,7 @@ from poetry_plugin_templating.util import (
     get_listable,
     get_relative,
     matches_any,
+    traverse,
 )
 
 RE_TEMPLATE_SLOT = re.compile(r"(?:#\s*)?\${(.+)}")
@@ -119,7 +120,9 @@ class Construct:
     constructs: List["Construct"] = []
 
     def __init__(
-        self, pattern: Pattern, handler: Callable[[Match, EvaluationContext], str]
+        self,
+        pattern: Pattern,
+        handler: Callable[[Match, EvaluationContext], str],
     ) -> None:
         Construct.constructs.append(self)
         self.handler = handler
@@ -138,6 +141,18 @@ class Construct:
         return wrapper
 
 
+# Define Constructs
+
+
 @Construct.construct("^[\"'](.+)[\"']$")
 def literal_construct(match: Match, ctx: EvaluationContext) -> str:
     return ctx.evaluate_string(match.group(1))
+
+
+@Construct.construct(r"^pyproject((?:\.?.+)+)?$")
+def pyproject_construct(match: Match, ctx: EvaluationContext) -> str:
+    if match.group(1) is None:
+        return str(ctx.engine.pyproject.data)
+
+    result = traverse(ctx.engine.pyproject.data, match.group(1)[1:])
+    return str(result)

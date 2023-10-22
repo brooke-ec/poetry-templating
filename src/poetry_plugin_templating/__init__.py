@@ -1,4 +1,4 @@
-__version__ = "${'version'}"
+__version__ = "${pyproject.tool.poetry.version}"
 
 CONFIG_TABLE = "poetry_templating"
 DEFAULT_ENCODING = "utf-8"
