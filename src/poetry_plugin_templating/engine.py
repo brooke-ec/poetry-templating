@@ -14,8 +14,8 @@ from poetry_plugin_templating.util import (
     StrPath,
     get_configuration,
     get_listable,
-    get_relative,
     matches_any,
+    relative,
     traverse,
 )
 
@@ -37,7 +37,7 @@ class TemplatingEngine:
         """
         self.pyproject: PyProjectTOML = pyproject
         self.root = os.path.dirname(pyproject.path)
-        self.cache: dict[str, str] = {}
+        self.cache: dict[Path, str] = {}
 
         # Get configuration
         configuration = get_configuration(pyproject)
@@ -46,7 +46,7 @@ class TemplatingEngine:
         self.exclude = get_listable(configuration, "exclude", DEFAULT_EXCLUDE)
 
     def should_process(self, path: StrPath) -> bool:
-        rel = get_relative(path, self.root)
+        rel = relative(path, self.root)
         return matches_any(rel, self.include) and not matches_any(rel, self.exclude)
 
     def evaluate_file(self, data: str, path: Optional[StrPath] = None) -> str:
@@ -65,13 +65,12 @@ class TemplatingEngine:
             The processed data.
         """
         if path is not None:
-            path = get_relative(path, self.root)
+            path = self.relative(path)
             _log.debug("Templating Engine Processing '%s'", path.as_posix())
-            str_path = str(path)
 
             # Check if file is in cache
-            if str_path in self.cache:
-                return self.cache[str_path]
+            if path in self.cache:
+                return self.cache[path]
 
         # Process one line at a time
         lines: List[str] = []
@@ -84,8 +83,11 @@ class TemplatingEngine:
 
         # Add to cache
         if path is not None:
-            self.cache[str(path)] = result
+            self.cache[path] = result
         return result
+
+    def relative(self, path: StrPath) -> Path:
+        return relative(path, self.root)
 
 
 class EvaluationContext:

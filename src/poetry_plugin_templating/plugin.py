@@ -3,7 +3,7 @@ from io import BytesIO, StringIO
 from pathlib import Path
 from tarfile import TarFile, TarInfo
 from typing import IO as IOType
-from typing import BinaryIO, TextIO, cast
+from typing import Union, cast
 
 from poetry.console.application import Application
 from poetry.core.masonry.builder import Builder
@@ -31,22 +31,27 @@ def builder_mixin(builder: Builder, *args, **kwargs):
     # Define replacement for Path.open method
     @Mixin.mixin(Path, "open")
     def open_mixin(path: Path, mode: str = "r", *args, **kwargs) -> IOType:
-        src: IOType = open_mixin.original(path, mode, *args, **kwargs)
+        relative = engine.relative(path)
+        in_cache = relative in engine.cache
+        writable = mode not in ("r", "rb")
 
-        if not engine.should_process(path):
-            return src
+        if in_cache and not writable:
+            evaluated = engine.cache[relative]
+        else:
+            src: IOType = open_mixin.original(path, mode, *args, **kwargs)
+            if writable or not engine.should_process(path):
+                return src
+
+            raw: Union[str, bytes] = src.read()
+            if isinstance(raw, bytes):
+                raw = cast(bytes, raw).decode(engine.encoding)
+            evaluated = engine.evaluate_file(raw, path)  # type: ignore
 
         # Process file, considering if it was opened in binary mode
         if mode == "r":
-            text_io: TextIO = cast(TextIO, src)
-            processed = engine.evaluate_file(text_io.read(), path)
-            return StringIO(processed)
-        if mode == "rb":
-            binary_io: BinaryIO = cast(BinaryIO, src)
-            text = binary_io.read().decode(engine.encoding)
-            processed = engine.evaluate_file(text, path)
-            return BytesIO(processed.encode(engine.encoding))
-        return src  # Do not process files opened with write capabilities
+            return StringIO(evaluated)
+        else:
+            return BytesIO(evaluated.encode(engine.encoding))
 
     # Define replacement for TarFile.gettarinfo method
     @Mixin.mixin(TarFile, "gettarinfo")
