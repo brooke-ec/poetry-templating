@@ -69,6 +69,10 @@ class TemplatingEngine:
             path = self.relative(path)
             _log.debug("Templating Engine Processing '%s'", path.as_posix())
 
+            # Cancel if file shouldn't be processed
+            if not self.should_process(path):
+                return data
+
             # Check if file is in cache
             if path in self.cache:
                 return self.cache[path]
@@ -159,3 +163,17 @@ def pyproject_construct(match: Match, ctx: EvaluationContext) -> str:
 
     result = traverse(ctx.engine.pyproject.data, match.group(1)[1:])
     return str(result)
+
+
+@Construct.construct(r"^(\.?(?:\/.+)+)$")
+def file_construct(match: Match, ctx: EvaluationContext) -> str:
+    path: str = match.group(1)
+
+    if path.startswith("/"):
+        path = os.path.join(ctx.engine.root, path[1:])
+    else:
+        if ctx.path is None:
+            raise TemplatingError(ctx, "Relative paths are not permitted in this context")
+
+    with open(path, "r", encoding=ctx.engine.encoding) as f:
+        return ctx.engine.evaluate_file(f.read(), path)
