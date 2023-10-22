@@ -3,14 +3,15 @@ from __future__ import annotations
 import logging
 import os
 import re
+from pathlib import Path
 from re import Match, Pattern
 from typing import Callable, List, Optional, Union
 
 from poetry.core.pyproject.toml import PyProjectTOML
 
-from poetry_plugin_templating import DEFAULT_ENCODING, DEFAULT_EXCLUDE, DEFAULT_INCLUDE
-from poetry_plugin_templating.error import TemplatingError
-from poetry_plugin_templating.util import (
+from poetry_templating import DEFAULT_ENCODING, DEFAULT_EXCLUDE, DEFAULT_INCLUDE
+from poetry_templating.error import TemplatingError
+from poetry_templating.util import (
     StrPath,
     get_configuration,
     get_listable,

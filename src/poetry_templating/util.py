@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 
 from poetry.core.pyproject.toml import PyProjectTOML
 
-from poetry_plugin_templating import CONFIG_TABLE
+from poetry_templating import CONFIG_TABLE
 
 StrPath = Union[Path, str]
 

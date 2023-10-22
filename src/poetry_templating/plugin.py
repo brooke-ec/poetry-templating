@@ -9,7 +9,7 @@ from poetry.console.application import Application
 from poetry.core.masonry.builder import Builder
 from poetry.plugins.application_plugin import ApplicationPlugin
 
-from poetry_plugin_templating.util import Mixin
+from poetry_templating.util import Mixin
 
 _log = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class TemplatingPlugin(ApplicationPlugin):
 @Mixin.mixin(Builder, "build")
 def builder_mixin(builder: Builder, *args, **kwargs):
     _log.debug("Setting up Templating System...")
-    from poetry_plugin_templating.engine import TemplatingEngine
+    from poetry_templating.engine import TemplatingEngine
 
     # Set up templating engine
     engine = TemplatingEngine(builder._poetry.pyproject)

@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "poetry-plugin-templating"
+name = "poetry-templating"
 version = "0.1.0"
-description = ""
+description = "A plugin for poetry which lets you substitute text on build."
 authors = ["NimajnebEC <nimajnebec@users.noreply.github.com>"]
 readme = "README.md"
-packages = [{ include = "poetry_plugin_templating", from = "src" }]
+packages = [{ include = "poetry_templating", from = "src" }]
 
 [tool.poetry.dependencies]
 python = "^3.8.1"
@@ -21,7 +21,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.plugins."poetry.application.plugin"]
-templating = "poetry_plugin_templating.plugin:TemplatingPlugin"
+templating = "poetry_templating.plugin:TemplatingPlugin"
 
 [tool.poetry_templating]
-exclude = "src/poetry_plugin_templating/engine.py"
+exclude = "src/poetry_templating/engine.py"

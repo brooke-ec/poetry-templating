@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from poetry_plugin_templating.engine import EvaluationContext
+    from poetry_templating.engine import EvaluationContext
 
 _log = logging.getLogger(__name__)
 
