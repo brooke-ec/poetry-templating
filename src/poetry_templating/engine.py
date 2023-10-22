@@ -156,7 +156,7 @@ def literal_construct(match: Match, ctx: EvaluationContext) -> str:
     return ctx.evaluate_string(match.group(1))
 
 
-@Construct.construct(r"^pyproject((?:\.?.+)+)?$")
+@Construct.construct(r"^pyproject((?:\.[^.]+)+)?$")
 def pyproject_construct(match: Match, ctx: EvaluationContext) -> str:
     if match.group(1) is None:
         return str(ctx.engine.pyproject.data)
@@ -174,6 +174,10 @@ def file_construct(match: Match, ctx: EvaluationContext) -> str:
     else:
         if ctx.path is None:
             raise EvaluationError(ctx, "Relative paths are not permitted in this context")
+        path = os.path.join(ctx.engine.root, os.path.dirname(ctx.path), path)
+
+    if not os.path.isfile(path):
+        raise EvaluationError(ctx, f'No such file "{os.path.abspath(path)}"')
 
     with open(path, "r", encoding=ctx.engine.encoding) as f:
         return ctx.engine.evaluate_file(f.read(), path)
