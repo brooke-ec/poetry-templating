@@ -1,5 +1,6 @@
 import logging
 from io import BytesIO, StringIO
+from os import stat_result
 from pathlib import Path
 from tarfile import TarFile, TarInfo
 from typing import IO as IOType
@@ -70,5 +71,27 @@ def builder_mixin(builder: Builder, *args, **kwargs):
             info.size = len(Path(path).read_bytes())
         return info
 
-    with open_mixin, tar_info_mixin:  # Inject mixin for duration of the build
+    # Define replacement for Path.stat method
+    @Mixin.mixin(Path, "stat")
+    def stat_mixin(path: Path):
+        info: stat_result = stat_mixin.original(path)
+        if engine.should_process(path):
+            size = len(Path(path).read_bytes())
+            info = stat_result(
+                [
+                    info.st_mode,
+                    info.st_ino,
+                    info.st_dev,
+                    info.st_nlink,
+                    info.st_uid,
+                    info.st_gid,
+                    size,
+                    info.st_atime,
+                    info.st_mtime,
+                    info.st_ctime,
+                ]
+            )
+        return info
+
+    with open_mixin, tar_info_mixin, stat_mixin:  # Inject mixins for duration of the build
         return builder_mixin.original(builder, *args, **kwargs)
