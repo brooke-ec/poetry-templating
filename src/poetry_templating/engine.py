@@ -142,7 +142,7 @@ class EvaluationContext:
                     if isinstance(e, EvaluationError):
                         raise
                     raise EvaluationError(self, e) from e
-        raise EvaluationError(self, "Invalid Syntax")
+        raise EvaluationError(self, "Unknown Construct")
 
 
 class Construct:
