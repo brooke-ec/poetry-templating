@@ -218,3 +218,11 @@ def environ_construct(match: Match, ctx: EvaluationContext) -> str:
         raise EvaluationError(ctx, f"No environment variable '{key}'")
 
     return os.environ[key]
+
+
+if __name__ == "__main__":
+    pyproject = PyProjectTOML(Path("pyproject.toml"))
+    engine = TemplatingEngine(pyproject)
+
+    result = engine.evaluate_file("${pyproject.tool.poetry.authors}")
+    print(result)

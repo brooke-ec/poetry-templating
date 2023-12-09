@@ -73,8 +73,8 @@ def builder_mixin(builder: Builder, *args, **kwargs):
 
     # Define replacement for Path.stat method
     @Mixin.mixin(Path, "stat")
-    def stat_mixin(path: Path):
-        info: stat_result = stat_mixin.original(path)
+    def stat_mixin(path: Path, *args, **kwargs):
+        info: stat_result = stat_mixin.original(path, *args, **kwargs)
         if engine.should_process(path):
             size = len(Path(path).read_bytes())
             info = stat_result(

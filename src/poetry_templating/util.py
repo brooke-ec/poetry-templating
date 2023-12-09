@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -146,7 +147,7 @@ def relative(path: StrPath, root: str) -> Path:
     Path
         The resolved, relative path.
     """
-    resolved = Path(path).resolve()
+    resolved = Path(os.path.realpath(path))
     try:
         return resolved.relative_to(root)
     except ValueError:
@@ -164,7 +165,7 @@ def traverse(
     for i, step in enumerate(path):
         if isinstance(current, dict):  # Handle dictionaries
             if step not in current:
-                raise KeyError(f"{'.'.join(path[:i+1])} does not exist")
+                raise KeyError(f"{'.'.join(path[:i + 1])} does not exist")
             current = current[step]
         elif isinstance(current, list):  # Handle lists
             try:

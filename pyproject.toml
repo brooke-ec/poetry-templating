@@ -10,7 +10,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.8.1"
-poetry = "^1.6.0"
+poetry = "^1.7.1"
 
 [tool.poetry.group.dev.dependencies]
 flake8-length = "^0.3.1"
