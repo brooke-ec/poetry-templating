@@ -1,6 +1,9 @@
 # Templating Poetry Plugin
 
 [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
+[![PyPI - Version](https://img.shields.io/pypi/v/poetry-templating)
+](https://pypi.org/project/poetry-templating/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/poetry-templating)](https://pypi.org/project/poetry-templating/)
 
 A plugin for [Poetry](https://python-poetry.org/) which lets you substitute text on build. This plugin was created to allow you to keep a single source of truth for package wide properties such as version and author.
 
