@@ -4,7 +4,7 @@
 [![PyPI - Version](https://img.shields.io/pypi/v/poetry-templating)
 ](https://pypi.org/project/poetry-templating/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/poetry-templating)](https://pypi.org/project/poetry-templating/)
-[![Coverage Status](https://coveralls.io/repos/github/NimajnebEC/poetry-templating/badge.svg?branch=main)](https://coveralls.io/github/NimajnebEC/poetry-templating?branch=main)
+[![Coverage Status](https://img.shields.io/coverallsCoverage/github/NimajnebEC/poetry-templating)](https://coveralls.io/github/NimajnebEC/poetry-templating?branch=main)
 [![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/nimajnebec/poetry-templating/test.yml)
 ](https://github.com/NimajnebEC/poetry-templating/actions)
 
