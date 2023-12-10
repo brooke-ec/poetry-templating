@@ -13,6 +13,7 @@ python = ">= 3.8, < 3.13"
 poetry = "^1.7.1"
 
 [tool.poetry.group.dev.dependencies]
+coveralls = "^3.3.1"
 pytest = "^7.4.3"
 ruff = "^0.1.7"
 
@@ -23,8 +24,12 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.plugins."poetry.application.plugin"]
 templating = "poetry_templating.plugin:TemplatingPlugin"
 
+[tool.poetry_templating]
+exclude = "src/poetry_templating/engine.py"
+
 [tool.ruff]
 line-length = 92
 
-[tool.poetry_templating]
-exclude = "src/poetry_templating/engine.py"
+[tool.coverage.run]
+source = ["poetry_templating"]
+command_line = "-m pytest"

@@ -1,0 +1,30 @@
+on: ["push", "pull_request"]
+
+name: Run Unit Tests
+
+jobs:
+  test:
+    name: Ubuntu / 3.12
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Update PYTHONPATH
+        run: echo "$HOME/src" >> $PYTHONPATH
+
+      - name: Install dependencies
+        run: poetry install --with dev
+
+      - name: Run unit tests with coverage
+        run: poetry run coverage run
+
+      - name: Coveralls
+        uses: coverallsapp/github-action@v2
