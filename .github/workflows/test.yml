@@ -6,6 +6,9 @@ jobs:
   test:
     name: Ubuntu / 3.12
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v1
 
