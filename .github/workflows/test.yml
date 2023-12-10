@@ -27,7 +27,9 @@ jobs:
         run: poetry install --with dev
 
       - name: Run unit tests with coverage
-        run: poetry run coverage run
+        run: |
+          poetry run coverage run
+          poetry run coverage report >> $GITHUB_OUTPUT
 
       - name: Coveralls
         uses: coverallsapp/github-action@v2
