@@ -8,8 +8,11 @@ from poetry_templating.util import (
     get_configuration,
     get_listable,
     matches_any,
+    relative,
     traverse,
 )
+
+# test mixins
 
 
 @pytest.fixture
@@ -53,6 +56,9 @@ def test_mixin_context(mixin_pair):
     assert not instance.test()
 
 
+# test matches_any
+
+
 @pytest.mark.parametrize(
     "path, patterns",
     [
@@ -87,6 +93,14 @@ def test_get_listable(dictionary):
     assert get_listable(dictionary, "key", ["success"]) == ["success"]
 
 
+# test traverse
+
+
+@pytest.fixture
+def demo_structure():
+    return {"list": [{"name": 1}, 2], "dict": {"subdict": 3}, "top": 4}
+
+
 @pytest.mark.parametrize(
     "path, expected",
     [
@@ -97,14 +111,35 @@ def test_get_listable(dictionary):
         ("dict", {"subdict": 3}),
     ],
 )
-def test_traverse(path, expected):
-    structure = {"list": [{"name": 1}, 2], "dict": {"subdict": 3}, "top": 4}
-    assert traverse(structure, path) == expected
+def test_traverse(path, expected, demo_structure):
+    assert traverse(demo_structure, path) == expected
+
+
+@pytest.mark.parametrize(
+    "path, error",
+    [
+        ("unknown", KeyError),
+        ("list.a", ValueError),
+        ("list.2", IndexError),
+        ("top.sub", ValueError),
+    ],
+)
+def test_traverse_errors(path, error, demo_structure):
+    try:
+        traverse(demo_structure, path)
+    except Exception as e:
+        assert isinstance(e, error)
+    else:
+        assert False
+
+
+# test get_configuration
 
 
 def test_get_configuration_present(pyproject_path):
     with open(pyproject_path, "a") as f:
         f.write("\n[tool.poetry-templating]\nsuccessful = true")
+        f.flush()
 
     pyproject = PyProjectTOML(Path(pyproject_path))
     assert get_configuration(pyproject) == {"successful": True}
@@ -113,3 +148,49 @@ def test_get_configuration_present(pyproject_path):
 def test_get_configuration_missing(pyproject_path):
     pyproject = PyProjectTOML(Path(pyproject_path))
     assert get_configuration(pyproject) == {}
+
+
+def test_get_configuration_missing_tool(temp_file):
+    pyproject = PyProjectTOML(Path(temp_file[1]))
+
+    try:
+        get_configuration(pyproject)
+    except Exception as e:
+        assert isinstance(e, TypeError)
+    else:
+        assert False
+
+
+def test_get_configuration_type_mismatch(pyproject_path):
+    with open(pyproject_path, "a") as f:
+        f.write("\n[tool]\npoetry-templating = true")
+        f.flush()
+
+    pyproject = PyProjectTOML(Path(pyproject_path))
+    try:
+        get_configuration(pyproject)
+    except Exception as e:
+        assert isinstance(e, TypeError)
+    else:
+        assert False
+
+
+# test relative
+
+
+@pytest.mark.parametrize(
+    "path, expected",
+    [
+        ("/top/root/subdir", "subdir"),
+        ("/top/root/../root/subdir", "subdir"),
+    ],
+)
+def test_relative(path, expected):
+    root = Path("/top/root").resolve()
+    assert relative(path, root) == Path(expected).resolve()
+
+
+def test_relative_absolute():
+    root = Path("/top/root").resolve()
+    expected = Path("/diff/root").resolve()
+    assert relative(expected, root) == expected

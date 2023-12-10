@@ -132,7 +132,7 @@ def get_listable(dict: dict, key: str, default: list = []) -> list:
     return value
 
 
-def relative(path: StrPath, root: str) -> Path:
+def relative(path: StrPath, root: StrPath) -> Path:
     """Attempts to generate a relative path from the provided root. An absolute path will be returned if `path` is not a subpath of `root`.
 
     Parameters

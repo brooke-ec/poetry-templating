@@ -21,12 +21,20 @@ build-backend = "poetry.core.masonry.api"
 
 
 @pytest.fixture
-def pyproject_path():
-    fd, path = tempfile.mkstemp(".toml")
+def temp_file():
+    fd, path = tempfile.mkstemp()
     try:
         with os.fdopen(fd, "w+") as f:
-            f.write(BASIC_PYPROJECT_TOML)
-            f.flush()
-            yield path
+            yield f, path
     finally:
         os.remove(path)
+
+
+@pytest.fixture
+def pyproject_path(temp_file):
+    f, path = temp_file
+
+    f.write(BASIC_PYPROJECT_TOML)
+    f.flush()
+
+    yield path
