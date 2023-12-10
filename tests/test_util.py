@@ -1,7 +1,15 @@
 import os
+from pathlib import Path
 
 import pytest
-from poetry_templating.util import Mixin, get_listable, matches_any
+from poetry.core.pyproject.toml import PyProjectTOML
+from poetry_templating.util import (
+    Mixin,
+    get_configuration,
+    get_listable,
+    matches_any,
+    traverse,
+)
 
 
 @pytest.fixture
@@ -77,3 +85,36 @@ def test_glob_not_matches(path, patterns):
 @pytest.mark.parametrize("dictionary", [{"key": "success"}, {"key": ["success"]}, {}])
 def test_get_listable(dictionary):
     assert get_listable(dictionary, "key", ["success"]) == ["success"]
+
+
+@pytest.mark.parametrize(
+    "path, expected",
+    [
+        ("list.0.name", 1),
+        ("list.1", 2),
+        ("dict.subdict", 3),
+        ("top", 4),
+        ("dict", {"subdict": 3}),
+    ],
+)
+def test_traverse(path, expected):
+    structure = {"list": [{"name": 1}, 2], "dict": {"subdict": 3}, "top": 4}
+    assert traverse(structure, path) == expected
+
+
+def test_get_configuration_present(pyproject_path):
+    with open(pyproject_path, "a") as f:
+        f.write(
+            """
+[tool.poetry_templating]
+successful = true
+"""
+        )
+
+    pyproject = PyProjectTOML(Path(pyproject_path))
+    assert get_configuration(pyproject) == {"successful": True}
+
+
+def test_get_configuration_missing(pyproject_path):
+    pyproject = PyProjectTOML(Path(pyproject_path))
+    assert get_configuration(pyproject) == {}
