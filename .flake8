@@ -1,8 +1,0 @@
-[flake8]
-ban-relative-imports = true
-max-line-length = 92
-ignore =
-    LN002,
-    E501,
-    W505,
-    W503

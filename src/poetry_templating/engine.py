@@ -159,7 +159,7 @@ class Construct:
 
     @staticmethod
     def construct(
-        pattern: Union[Pattern, str]
+        pattern: Union[Pattern, str],
     ) -> Callable[[Callable[[Match, EvaluationContext], str]], Construct]:
         if isinstance(pattern, str):
             pattern = re.compile(pattern)

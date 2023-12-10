@@ -1,5 +1,4 @@
 import pytest
-
 from poetry_templating.util import Mixin
 
 
