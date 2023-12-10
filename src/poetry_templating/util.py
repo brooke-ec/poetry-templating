@@ -155,9 +155,34 @@ def relative(path: StrPath, root: str) -> Path:
 
 
 def traverse(
-    structure: Union[Dict[str, Any], list[Any]],
+    structure: Union[Dict[str, Any], List[Any]],
     path: Union[str, List[str]],
 ) -> Any:
+    """Gets value at the provided path from the given dictionary or list.
+
+    Paths should be a list of keys/indexes as either a list or string, separated by dots.
+
+    Parameters
+    ----------
+    structure : dict | list
+        The structure to traverse through.
+    path : str | list[str]
+        The path to the value to return.
+
+    Returns
+    -------
+    Any
+        The value at the provided path
+
+    Raises
+    ------
+    KeyError
+        Raised when attempting to access a dictionary key that does not exist.
+    ValueError
+        Raised when an unexpected value is found while traversing.
+    IndexError
+        Raised when attempting to access a list item that does not exist.
+    """
     if isinstance(path, str):
         path = path.split(".")
 
