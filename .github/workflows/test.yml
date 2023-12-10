@@ -29,8 +29,7 @@ jobs:
       - name: Run unit tests with coverage
         run: poetry run coverage run
 
-      - name: Export as LCOV
-        run: poetry run coverage lcov
-
       - name: Coveralls
         uses: coverallsapp/github-action@v2
+        with:
+          file: coverage.lcov
