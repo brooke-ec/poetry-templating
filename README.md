@@ -126,11 +126,11 @@ Permission is hereby granted ...
 
 Poetry Templating can be configured in your `pyproject.toml` file under the `tool.poetry_templating` table.
 
-| key      | default        | description                                                                    |
-| -------- | -------------- | ------------------------------------------------------------------------------ |
-| encoding | "utf-8"        | The text encoding to use when processing files.                                |
-| include  | ["\*\*/\*.py"] | A list of glob patterns for files to process.                                  |
-| exclude  | []             | A list of glob patterns for files not to process, has priority over `include`. |
+| key      | default   | description                                                                    |
+| -------- | --------- | ------------------------------------------------------------------------------ |
+| encoding | "utf-8"   | The text encoding to use when processing files.                                |
+| include  | ["\*.py"] | A list of glob patterns for files to process.                                  |
+| exclude  | []        | A list of glob patterns for files not to process, has priority over `include`. |
 
 Poetry Templating can also be enabled and disabled within a single file:
 
