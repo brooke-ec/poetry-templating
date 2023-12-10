@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from poetry_templating.util import Mixin, get_listable, matches_any
 
@@ -50,7 +52,11 @@ def test_mixin_context(mixin_pair):
         ("test.py", ["*.png", "test.py"]),
         ("src/test.PY", ["*.py"]),
         ("src/test.py", ["/*.py"]),
-        ("src\\test.py", ["src/test.py"]),
+        pytest.param(
+            "src\\test.py",
+            ["src/test.py"],
+            marks=pytest.mark.skipif(os.name != "nt", reason="posix"),
+        ),
     ],
 )
 def test_glob_matches(path, patterns):
