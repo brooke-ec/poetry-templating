@@ -104,12 +104,7 @@ def test_traverse(path, expected):
 
 def test_get_configuration_present(pyproject_path):
     with open(pyproject_path, "a") as f:
-        f.write(
-            """
-[tool.poetry_templating]
-successful = true
-"""
-        )
+        f.write("\n[tool.poetry-templating]\nsuccessful = true")
 
     pyproject = PyProjectTOML(Path(pyproject_path))
     assert get_configuration(pyproject) == {"successful": True}
