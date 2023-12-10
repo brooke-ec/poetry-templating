@@ -183,14 +183,16 @@ def test_get_configuration_type_mismatch(pyproject_path):
     [
         ("/top/root/subdir", "subdir"),
         ("/top/root/../root/subdir", "subdir"),
+        ("/top/root/subdir/subsub", "subdir/subsub"),
     ],
 )
 def test_relative(path, expected):
-    root = Path("/top/root").resolve()
-    assert relative(path, root) == Path(expected).resolve()
+    path = Path(path).resolve().as_posix()
+    root = Path("/top/root").resolve().as_posix()
+    assert relative(path, root).as_posix() == expected
 
 
 def test_relative_absolute():
-    root = Path("/top/root").resolve()
-    expected = Path("/diff/root").resolve()
-    assert relative(expected, root) == expected
+    root = Path("/top/root").resolve().as_posix()
+    expected = Path("/diff/root").resolve().as_posix()
+    assert relative(expected, root).as_posix() == expected
