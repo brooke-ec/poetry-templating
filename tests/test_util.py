@@ -1,5 +1,5 @@
 import pytest
-from poetry_templating.util import Mixin
+from poetry_templating.util import Mixin, get_listable, matches_any
 
 
 @pytest.fixture
@@ -41,3 +41,33 @@ def test_mixin_context(mixin_pair):
         assert instance.test()
 
     assert not instance.test()
+
+
+@pytest.mark.parametrize(
+    "path, patterns",
+    [
+        ("src/test.py", ["*.py"]),
+        ("test.py", ["*.png", "test.py"]),
+        ("src/test.PY", ["*.py"]),
+        ("src/test.py", ["/*.py"]),
+        ("src\\test.py", ["src/test.py"]),
+    ],
+)
+def test_glob_matches(path, patterns):
+    assert matches_any(path, patterns)
+
+
+@pytest.mark.parametrize(
+    "path, patterns",
+    [
+        ("src/test.pyi", ["*.py"]),
+        ("not_test.py", ["test.py"]),
+    ],
+)
+def test_glob_not_matches(path, patterns):
+    assert not matches_any(path, patterns)
+
+
+@pytest.mark.parametrize("dictionary", [{"key": "success"}, {"key": ["success"]}, {}])
+def test_get_listable(dictionary):
+    assert get_listable(dictionary, "key", ["success"]) == ["success"]
