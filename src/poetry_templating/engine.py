@@ -55,10 +55,11 @@ class TemplatingEngine:
         for path in (os.path.join(p, f) for p, _, fs in os.walk(self.root) for f in fs):
             if self.should_process(path):
                 count += 1
-                with open(path, "r") as file:
+                with open(path, "r+") as file:
                     evaluated = self.evaluate_data(file.read(), path)
-                with open(path, "w") as file:
+                    file.seek(0)
                     file.write(evaluated)
+                    file.truncate()
         return count
 
     def should_process(self, path: StrPath) -> bool:
