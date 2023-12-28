@@ -42,7 +42,6 @@ class TemplatingEngine:
         """
         self.pyproject: PyProjectTOML = pyproject
         self.root = os.path.dirname(pyproject.path)
-        self.cache: dict[Path, str] = {}
 
         # Get configuration
         configuration = get_configuration(pyproject)
@@ -50,97 +49,78 @@ class TemplatingEngine:
         self.include = get_listable(configuration, "include", DEFAULT_INCLUDE)
         self.exclude = get_listable(configuration, "exclude", DEFAULT_EXCLUDE)
 
-    def evaluate_and_replace(self) -> int:
-        count = 0
-        for path in (os.path.join(p, f) for p, _, fs in os.walk(self.root) for f in fs):
-            if self.should_process(path):
-                count += 1
-                with open(path, "r+") as file:
-                    evaluated = self.evaluate_data(file.read(), path)
-                    file.seek(0)
-                    file.write(evaluated)
-                    file.truncate()
-        return count
+    def relative(self, path: StrPath) -> Path:
+        return relative(path, self.root)
 
     def should_process(self, path: StrPath) -> bool:
         rel = relative(path, self.root)
         return matches_any(rel, self.include) and not matches_any(rel, self.exclude)
 
-    def evaluate_data(self, data: str, location: Optional[StrPath] = None) -> str:
-        """Process the provided data, substituting template slots with their evaluated values.
+    def evaluate_and_replace(self) -> int:
+        count = 0
+        for path in (os.path.join(p, f) for p, _, fs in os.walk(self.root) for f in fs):
+            if self.should_process(path):
+                count += 1
+                result = ""
+                ctx = EvaluationContext(path, self)
+                with open(path, "r+") as file:
+                    for line in file:
+                        evaluated = ctx.evaluate_line(line)
+                        if evaluated is not None:
+                            result += evaluated
+                    file.seek(0)
+                    file.write(result)
+                    file.truncate()
 
-        Parameters
-        ----------
-        data : str
-            The data to process.
-        location : Union[Path, str], optional
-            The path to the file that is being processed.
+        return count
 
-        Returns
-        -------
-        str
-            The processed data.
-        """
-        if location is not None:
-            location = self.relative(location)
-            _log.debug("Templating Engine Processing '%s'", location.as_posix())
-
-            # Cancel if file shouldn't be processed
-            if not self.should_process(location):
-                return data
-
-            # Check if file is in cache
-            if location in self.cache:
-                return self.cache[location]
-
-        # Process one line at a time
-        enabled = True
-        lines: List[str] = []
-        ctx = EvaluationContext(0, location, self)
+    def evaluate_string(
+        self,
+        data: str,
+        location: Optional[StrPath] = None,
+    ) -> str:
+        result: List[str] = []
+        ctx = EvaluationContext(location, self)
         for line in data.split("\n"):
-            ctx.line += 1
-
-            # Check for on/off comment
-            if RE_DISABLE.match(line):
-                enabled = False
-                continue
-            if RE_ENABLE.match(line):
-                enabled = True
-                continue
-
-            # Process line
-            if enabled:
-                # Skip if ends with delete comment
-                if RE_DELETE.search(line):
-                    continue
-
-                lines.append(ctx.evaluate_string(line))  # evaluate slots
-            else:
-                lines.append(line)
-
-        result = "\n".join(lines)
-
-        # Add to cache
-        if location is not None:
-            self.cache[location] = result
-        return result
-
-    def relative(self, path: StrPath) -> Path:
-        return relative(path, self.root)
+            evaluated = ctx.evaluate_line(line)
+            if evaluated is not None:
+                result.append(evaluated)
+        return "\n".join(result)
 
 
 class EvaluationContext:
     def __init__(
         self,
-        line: int,
         location: Optional[StrPath],
         engine: TemplatingEngine,
     ) -> None:
-        self.location = location
+        self.location = location and engine.relative(location)
         self.engine = engine
-        self.line = line
+        self.enabled = True
+        self.line = -1
 
-    def evaluate_string(self, data: str):
+    def evaluate_line(self, data: str) -> Union[str, None]:
+        self.line += 1
+
+        # Check for on/off comment
+        if RE_DISABLE.match(data):
+            self.enabled = False
+            return None
+        if RE_ENABLE.match(data):
+            self.enabled = True
+            return None
+
+        # Process line
+        if self.enabled:
+            # Skip if ends with delete comment
+            if RE_DELETE.search(data):
+                return None
+
+            return self.evaluate_string(data)
+        else:
+            return data
+
+    def evaluate_string(self, data: str) -> str:
         return RE_TEMPLATE_SLOT.sub(self._evaluate_slot, data)
 
     def _evaluate_slot(self, match: re.Match) -> str:
@@ -216,7 +196,7 @@ def file_construct(match: Match, ctx: EvaluationContext) -> str:
         raise EvaluationError(ctx, f'No such file "{os.path.abspath(path)}"')
 
     with open(path, "r", encoding=ctx.engine.encoding) as f:
-        return ctx.engine.evaluate_data(f.read(), path)
+        return ctx.engine.evaluate_string(f.read(), path)
 
 
 @Construct.construct(r"^env(?:\.([^\.\s]+))?$")
@@ -236,5 +216,5 @@ if __name__ == "__main__":
     pyproject = PyProjectTOML(Path("pyproject.toml"))
     engine = TemplatingEngine(pyproject)
 
-    result = engine.evaluate_data("${pyproject.tool.poetry.authors}")
+    result = engine.evaluate_string("${pyproject.tool.poetry.authors}")
     print(result)
