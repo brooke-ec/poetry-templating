@@ -75,7 +75,7 @@ class TemplatingPlugin(ApplicationPlugin):
 
         # Mixin to set the "target_dir" parameter back to the original project
         @Mixin.mixin(Builder, "build")
-        def builder_mixin(*args, target_dir: Path | None = None, **kwargs) -> None:
+        def builder_mixin(*args, target_dir=None, **kwargs) -> None:
             target_dir = self.root / DEFAULT_BUILD_DIR
             builder_mixin.original(*args, **kwargs, target_dir=target_dir)
 
