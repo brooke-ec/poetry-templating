@@ -1,10 +1,10 @@
-import hashlib
 import os
 import shutil
 import sys
 import tempfile
 from io import StringIO
 from pathlib import Path
+from zipfile import ZipFile
 
 import pytest
 from cleo.io.inputs.argv_input import ArgvInput
@@ -74,9 +74,8 @@ def test_build_templating(example_project, basic_io, tmp_venv):
     command.execute(basic_io)
 
     artefact = os.path.join(example_project, "dist", "example-1.2.3-py3-none-any.whl")
-    with open(artefact, "rb") as file:
-        hash = hashlib.sha1(file.read()).hexdigest()
-        assert hash == "13a11a8aded351b59cb4f1f6521c82d948bfdffc"
+    with ZipFile(artefact).open("example/__init__.py") as f:
+        assert f.read().decode("utf-8") == "__version__ = '1.2.3'"
 
 
 def test_help():
