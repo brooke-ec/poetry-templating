@@ -3,7 +3,7 @@ import shutil
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, List, Type
 
 from cleo.events.console_command_event import ConsoleCommandEvent
 from cleo.events.console_events import COMMAND
@@ -48,7 +48,7 @@ class EvaluateCommand(Command):
 
 class TemplatingPlugin(ApplicationPlugin):
     @property
-    def commands(self) -> list[type[Command]]:
+    def commands(self) -> List[Type[Command]]:
         return [EvaluateCommand]
 
     def activate(self, application: Application):
