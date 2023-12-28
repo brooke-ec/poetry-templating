@@ -1,14 +1,18 @@
 import logging
+from contextlib import contextmanager
 from io import BytesIO, StringIO
 from os import stat_result
 from pathlib import Path
 from tarfile import TarFile, TarInfo
 from typing import IO as IOType
-from typing import Union, cast
+from typing import Iterator, Union, cast
 
+from cleo.io.io import IO
 from poetry.console.application import Application
+from poetry.console.commands.command import Command
 from poetry.core.masonry.builder import Builder
 from poetry.plugins.application_plugin import ApplicationPlugin
+from poetry.puzzle.provider import Indicator
 
 from poetry_templating.error import TemplatingError
 from poetry_templating.util import Mixin
@@ -16,9 +20,41 @@ from poetry_templating.util import Mixin
 _log = logging.getLogger(__name__)
 
 
+@contextmanager
+def progress(io: IO, message: str) -> Iterator[None]:
+    if not io.output.is_decorated():
+        io.write_line(message)
+        yield
+    else:
+        indicator = Indicator(io, "{message}{context}<debug>({elapsed:2s})</debug>")
+
+        with indicator.auto(
+            f"<info>{message}</info>",
+            f"<info>{message}</info>",
+        ):
+            yield
+
+
+class EvaluateCommand(Command):
+    name: str = "templating evaluate"
+    description = "Evaluate template slots in the current directory."
+
+    def handle(self) -> int:
+        from poetry_templating.engine import TemplatingEngine
+
+        engine = TemplatingEngine(self.poetry.pyproject)
+        with progress(self.io, "Evaluating template slots..."):
+            count = engine.evaluate_and_replace()
+        self.line(f"<info>Evaluated template slots in {count} files!</info>")
+        return 0
+
+
 class TemplatingPlugin(ApplicationPlugin):
     def activate(self, application: Application):
         builder_mixin.inject()  # Inject builder mixin so that templating is setup when a build is started.
+        application.command_loader.register_factory(
+            EvaluateCommand.name, lambda: EvaluateCommand()
+        )
 
 
 # Mixin to be injected into the Builder.build method to set up the templating system.
@@ -48,7 +84,7 @@ def builder_mixin(builder: Builder, *args, **kwargs):
                 raw: Union[str, bytes] = src.read()
                 if isinstance(raw, bytes):
                     raw = cast(bytes, raw).decode(engine.encoding)
-                evaluated = engine.evaluate_file(raw, path)  # type: ignore
+                evaluated = engine.evaluate_data(raw, path)  # type: ignore
 
             # Process file, considering if it was opened in binary mode
             if mode == "r":

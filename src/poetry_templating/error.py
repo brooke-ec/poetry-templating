@@ -17,7 +17,7 @@ class EvaluationError(TemplatingError):
             f"Error evaluating template: {message}\n  "
             + (
                 f"Line {ctx.line}"
-                if ctx.path is None
-                else f'File "{ctx.path}", line {ctx.line}'
+                if ctx.location is None
+                else f'File "{ctx.location}", line {ctx.line}'
             )
         )

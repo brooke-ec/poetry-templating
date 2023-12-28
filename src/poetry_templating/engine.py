@@ -50,18 +50,29 @@ class TemplatingEngine:
         self.include = get_listable(configuration, "include", DEFAULT_INCLUDE)
         self.exclude = get_listable(configuration, "exclude", DEFAULT_EXCLUDE)
 
+    def evaluate_and_replace(self) -> int:
+        count = 0
+        for path in (os.path.join(p, f) for p, _, fs in os.walk(self.root) for f in fs):
+            if self.should_process(path):
+                count += 1
+                with open(path, "r") as file:
+                    evaluated = self.evaluate_data(file.read(), path)
+                with open(path, "w") as file:
+                    file.write(evaluated)
+        return count
+
     def should_process(self, path: StrPath) -> bool:
         rel = relative(path, self.root)
         return matches_any(rel, self.include) and not matches_any(rel, self.exclude)
 
-    def evaluate_file(self, data: str, path: Optional[StrPath] = None) -> str:
+    def evaluate_data(self, data: str, location: Optional[StrPath] = None) -> str:
         """Process the provided data, substituting template slots with their evaluated values.
 
         Parameters
         ----------
         data : str
             The data to process.
-        path : Union[Path, str], optional
+        location : Union[Path, str], optional
             The path to the file that is being processed.
 
         Returns
@@ -69,22 +80,22 @@ class TemplatingEngine:
         str
             The processed data.
         """
-        if path is not None:
-            path = self.relative(path)
-            _log.debug("Templating Engine Processing '%s'", path.as_posix())
+        if location is not None:
+            location = self.relative(location)
+            _log.debug("Templating Engine Processing '%s'", location.as_posix())
 
             # Cancel if file shouldn't be processed
-            if not self.should_process(path):
+            if not self.should_process(location):
                 return data
 
             # Check if file is in cache
-            if path in self.cache:
-                return self.cache[path]
+            if location in self.cache:
+                return self.cache[location]
 
         # Process one line at a time
         enabled = True
         lines: List[str] = []
-        ctx = EvaluationContext(0, path, self)
+        ctx = EvaluationContext(0, location, self)
         for line in data.split("\n"):
             ctx.line += 1
 
@@ -109,8 +120,8 @@ class TemplatingEngine:
         result = "\n".join(lines)
 
         # Add to cache
-        if path is not None:
-            self.cache[path] = result
+        if location is not None:
+            self.cache[location] = result
         return result
 
     def relative(self, path: StrPath) -> Path:
@@ -121,11 +132,11 @@ class EvaluationContext:
     def __init__(
         self,
         line: int,
-        path: Optional[StrPath],
+        location: Optional[StrPath],
         engine: TemplatingEngine,
     ) -> None:
+        self.location = location
         self.engine = engine
-        self.path = path
         self.line = line
 
     def evaluate_string(self, data: str):
@@ -196,15 +207,15 @@ def file_construct(match: Match, ctx: EvaluationContext) -> str:
     if path.startswith("/"):
         path = os.path.join(ctx.engine.root, path[1:])
     else:
-        if ctx.path is None:
+        if ctx.location is None:
             raise EvaluationError(ctx, "Relative paths are not permitted in this context")
-        path = os.path.join(ctx.engine.root, os.path.dirname(ctx.path), path)
+        path = os.path.join(ctx.engine.root, os.path.dirname(ctx.location), path)
 
     if not os.path.isfile(path):
         raise EvaluationError(ctx, f'No such file "{os.path.abspath(path)}"')
 
     with open(path, "r", encoding=ctx.engine.encoding) as f:
-        return ctx.engine.evaluate_file(f.read(), path)
+        return ctx.engine.evaluate_data(f.read(), path)
 
 
 @Construct.construct(r"^env(?:\.([^\.\s]+))?$")
@@ -224,5 +235,5 @@ if __name__ == "__main__":
     pyproject = PyProjectTOML(Path("pyproject.toml"))
     engine = TemplatingEngine(pyproject)
 
-    result = engine.evaluate_file("${pyproject.tool.poetry.authors}")
+    result = engine.evaluate_data("${pyproject.tool.poetry.authors}")
     print(result)
