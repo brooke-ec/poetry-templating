@@ -5,7 +5,8 @@ import pytest
 
 BASIC_PYPROJECT_TOML = """
 [tool.poetry]
-name = "example_pyproject"
+name = "example"
+packages = [{include="example"}]
 version = "1.2.3"
 description = "Example description"
 authors = []
