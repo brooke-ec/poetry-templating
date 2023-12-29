@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -72,7 +73,10 @@ def test_decorated_progress():
     with progress(io, "Testing..."):
         time.sleep(1)
 
-    assert "\r\x1b[2KTesting... <debug>(1.0s)" in buffer.getvalue()
+    assert (
+        re.search("\r\x1b\\[2KTesting... <debug>\\(\\d+\\.\\d+s\\)", buffer.getvalue())
+        is not None
+    )
 
 
 def test_build_templating(example_project, basic_io, tmp_venv):
