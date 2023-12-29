@@ -149,3 +149,12 @@ def test_environ_construct_fail(temp_engine):
         pass
     else:
         raise AssertionError("Expected exception was not raised.")
+
+
+def test_construct_not_found(temp_engine):
+    try:
+        temp_engine.evaluate_string("${nonexistent}")
+    except EvaluationError:
+        pass
+    else:
+        raise AssertionError("Expected exception was not raised.")
