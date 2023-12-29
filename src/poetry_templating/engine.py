@@ -147,7 +147,7 @@ class EvaluationContext:
                 except Exception as e:
                     if isinstance(e, EvaluationError):
                         raise
-                    raise EvaluationError(self, e) from e
+                    raise EvaluationError(self, e) from e  # pragma: no cover
         raise EvaluationError(self, "Unknown Construct")
 
 
