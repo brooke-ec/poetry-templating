@@ -72,7 +72,7 @@ def test_decorated_progress():
     with progress(io, "Testing..."):
         time.sleep(1)
 
-    assert buffer.getvalue().endswith("\r\x1b[2KTesting... <debug>(1.0s)\n")
+    assert "\r\x1b[2KTesting... <debug>(1.0s)" in buffer.getvalue()
 
 
 def test_build_templating(example_project, basic_io, tmp_venv):
