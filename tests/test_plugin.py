@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 from io import StringIO
 from pathlib import Path
 from zipfile import ZipFile
@@ -14,7 +15,7 @@ from poetry.console.application import Application as PoetryApplication
 from poetry.console.commands.build import BuildCommand
 from poetry.factory import Factory
 from poetry.utils.env import EnvManager, VirtualEnv
-from poetry_templating.plugin import EvaluateCommand, TemplatingPlugin
+from poetry_templating.plugin import EvaluateCommand, TemplatingPlugin, progress
 from poetry_templating.util import Mixin
 
 from tests.conftest import BASIC_PYPROJECT_TOML
@@ -60,6 +61,20 @@ def test_evaluate_command(example_project, basic_io):
         assert f.read() == "__version__ = '1.2.3'"
 
 
+def test_decorated_progress():
+    buffer = StringIO()
+    os.environ["NO_COLOR"] = "1"
+    output = StreamOutput(buffer)
+    io = IO(ArgvInput([]), output, output)
+    os.environ.pop("NO_COLOR")
+
+    io.decorated()
+    with progress(io, "Testing..."):
+        time.sleep(1)
+
+    assert buffer.getvalue().endswith("\r\x1b[2KTesting... <debug>(1.0s)\n")
+
+
 def test_build_templating(example_project, basic_io, tmp_venv):
     poetry = Factory().create_poetry(example_project)
     command = BuildCommand()
@@ -79,18 +94,16 @@ def test_build_templating(example_project, basic_io, tmp_venv):
 
 
 def test_help():
+    buffer = StringIO()
     os.environ["NO_COLOR"] = "1"
-    try:
-        buffer = StringIO()
-        output = StreamOutput(buffer)
-        application = PoetryApplication()
-        application.auto_exits(False)
-        application.run(ArgvInput(["", "help", "templating evaluate"]), output, output)
+    output = StreamOutput(buffer)
+    os.environ.pop("NO_COLOR")
+    application = PoetryApplication()
+    application.auto_exits(False)
+    application.run(ArgvInput(["", "help", "templating evaluate"]), output, output)
 
-        expected = "Description:\n  " + EvaluateCommand.description
-        assert buffer.getvalue().strip().startswith(expected)
-    finally:
-        os.environ.pop("NO_COLOR")
+    expected = "Description:\n  " + EvaluateCommand.description
+    assert buffer.getvalue().strip().startswith(expected)
 
 
 def test_setup_build():
