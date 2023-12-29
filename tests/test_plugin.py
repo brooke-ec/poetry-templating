@@ -19,20 +19,6 @@ from poetry.utils.env import EnvManager, VirtualEnv
 from poetry_templating.plugin import EvaluateCommand, TemplatingPlugin, progress
 from poetry_templating.util import Mixin
 
-from tests.conftest import BASIC_PYPROJECT_TOML
-
-
-@pytest.fixture
-def example_project():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        with open(os.path.join(tmpdir, "pyproject.toml"), "w") as f:
-            f.write(BASIC_PYPROJECT_TOML)
-
-        os.mkdir(os.path.join(tmpdir, "example"))
-        with open(os.path.join(tmpdir, "example", "__init__.py"), "w") as f:
-            f.write("__version__ = '${pyproject.tool.poetry.version}'")
-        yield tmpdir
-
 
 @pytest.fixture
 def tmp_venv():
@@ -51,15 +37,15 @@ def basic_io():
     return IO(ArgvInput([]), StreamOutput(sys.stdout), StreamOutput(sys.stderr))
 
 
-def test_evaluate_command(example_project, basic_io):
-    poetry = Factory().create_poetry(example_project)
+def test_evaluate_command(project_path, basic_io):
+    poetry = Factory().create_poetry(project_path)
     command = EvaluateCommand()
     command._poetry = poetry
 
     command.execute(basic_io)
 
-    with open(os.path.join(example_project, "example", "__init__.py"), "r") as f:
-        assert f.read() == "__version__ = '1.2.3'"
+    with open(os.path.join(project_path, "example", "__init__.py"), "r") as f:
+        assert f.read() == "Success!"
 
 
 def test_decorated_progress():
@@ -79,22 +65,22 @@ def test_decorated_progress():
     )
 
 
-def test_build_templating(example_project, basic_io, tmp_venv):
-    poetry = Factory().create_poetry(example_project)
+def test_build_templating(project_path, basic_io, tmp_venv):
+    poetry = Factory().create_poetry(project_path)
     command = BuildCommand()
     command._poetry = poetry
     command._env = tmp_venv
 
     plugin = TemplatingPlugin()
-    plugin.root = Path(example_project)
+    plugin.root = Path(project_path)
     plugin.poetry = poetry
 
     plugin.setup_build(command)
     command.execute(basic_io)
 
-    artefact = os.path.join(example_project, "dist", "example-1.2.3-py3-none-any.whl")
+    artefact = os.path.join(project_path, "dist", "example-1.2.3-py3-none-any.whl")
     with ZipFile(artefact).open("example/__init__.py") as f:
-        assert f.read().decode("utf-8") == "__version__ = '1.2.3'"
+        assert f.read().decode("utf-8") == "Success!"
 
 
 def test_help():

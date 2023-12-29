@@ -39,3 +39,15 @@ def pyproject_path(temp_file):
     f.flush()
 
     yield path
+
+
+@pytest.fixture
+def project_path():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with open(os.path.join(tmpdir, "pyproject.toml"), "w") as f:
+            f.write(BASIC_PYPROJECT_TOML)
+
+        os.mkdir(os.path.join(tmpdir, "example"))
+        with open(os.path.join(tmpdir, "example", "__init__.py"), "w") as f:
+            f.write("${'Success!'}")
+        yield tmpdir
