@@ -79,15 +79,18 @@ def test_build_templating(example_project, basic_io, tmp_venv):
 
 
 def test_help():
-    buffer = StringIO()
     os.environ["NO_COLOR"] = "1"
-    output = StreamOutput(buffer)
-    application = PoetryApplication()
-    application.auto_exits(False)
-    application.run(ArgvInput(["", "help", "templating evaluate"]), output, output)
+    try:
+        buffer = StringIO()
+        output = StreamOutput(buffer)
+        application = PoetryApplication()
+        application.auto_exits(False)
+        application.run(ArgvInput(["", "help", "templating evaluate"]), output, output)
 
-    expected = "Description:\n  " + EvaluateCommand.description
-    assert buffer.getvalue().strip().startswith(expected)
+        expected = "Description:\n  " + EvaluateCommand.description
+        assert buffer.getvalue().strip().startswith(expected)
+    finally:
+        os.environ.pop("NO_COLOR")
 
 
 def test_setup_build():
