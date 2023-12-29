@@ -196,7 +196,10 @@ def file_construct(match: Match, ctx: EvaluationContext) -> str:
         raise EvaluationError(ctx, f'No such file "{os.path.abspath(path)}"')
 
     with open(path, "r", encoding=ctx.engine.encoding) as f:
-        return ctx.engine.evaluate_string(f.read(), path)
+        content = f.read()
+        if ctx.engine.should_process(path):
+            content = ctx.engine.evaluate_string(content, path)
+        return content
 
 
 @Construct.construct(r"^env(?:\.([^\.\s]+))?$")
