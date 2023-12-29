@@ -40,6 +40,7 @@ class TemplatingEngine:
         pyproject : PyProjectTOML
             The pyproject.toml of the parent package.
         """
+        self.processed: List[str] = []
         self.pyproject: PyProjectTOML = pyproject
         self.root = os.path.dirname(pyproject.path)
 
@@ -52,9 +53,17 @@ class TemplatingEngine:
     def relative(self, path: StrPath) -> Path:
         return relative(path, self.root)
 
+    def set_processed(self, path: StrPath) -> None:
+        rel = self.relative(path)
+        self.processed.append(rel.as_posix())
+
     def should_process(self, path: StrPath) -> bool:
-        rel = relative(path, self.root)
-        return matches_any(rel, self.include) and not matches_any(rel, self.exclude)
+        rel = self.relative(path)
+        return (
+            rel.as_posix() not in self.processed
+            and matches_any(rel, self.include)
+            and not matches_any(rel, self.exclude)
+        )
 
     def evaluate_and_replace(self) -> int:
         count = 0
@@ -71,6 +80,7 @@ class TemplatingEngine:
                     file.seek(0)
                     file.write(result)
                     file.truncate()
+                self.set_processed(path)
 
         return count
 
@@ -85,6 +95,10 @@ class TemplatingEngine:
             evaluated = ctx.evaluate_line(line)
             if evaluated is not None:
                 result.append(evaluated)
+
+        if location is not None:
+            self.set_processed(location)
+
         return "\n".join(result)
 
 
