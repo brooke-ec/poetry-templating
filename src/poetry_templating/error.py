@@ -1,10 +1,7 @@
-import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from poetry_templating.engine import EvaluationContext
-
-_log = logging.getLogger(__name__)
 
 
 class TemplatingError(Exception):
