@@ -1,5 +1,7 @@
 on:
   pull_request:
+  schedule:
+    - cron: "0 0 * * 0"
   push:
     paths:
       - src/**
@@ -38,13 +40,18 @@ jobs:
       - name: Install dependencies
         run: poetry install --with dev
 
+      - name: Install Poetry from main branch
+        run: poetry add git+https://github.com/python-poetry/poetry.git
+
       - name: Run unit tests with coverage
         run: poetry run coverage run
 
       - name: Export as LCOV
+        if: ${{ github.event_name != 'schedule' }}
         run: poetry run coverage lcov
 
       - name: Coveralls
+        if: ${{ github.event_name != 'schedule' }}
         uses: coverallsapp/github-action@v2
         with:
           flag-name: ${{ matrix.os }} / ${{ matrix.python-version }}
@@ -53,6 +60,7 @@ jobs:
 
   finish:
     name: Finish up...
+    if: ${{ github.event_name != 'schedule' }}
     needs: test
     runs-on: ubuntu-latest
     steps:
