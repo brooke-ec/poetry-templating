@@ -1,0 +1,38 @@
+# This workflow will build and publish the package to PyPi when a release is made
+
+name: Build for Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Install Poetry Plugins
+        run: poetry self add poetry-templating
+
+      - name: Build Package Distributions
+        run: poetry build
+
+      - name: Publish Package Distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Upload Assets to Release
+        uses: softprops/action-gh-release@v0.1.15
+        with:
+          files: dist/*
