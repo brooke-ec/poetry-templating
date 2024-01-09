@@ -38,7 +38,7 @@ Poetry Templating uses 'template slots' as placeholders and definitions for what
 __version__ = "${pyproject.tool.poetry.version}"
 ```
 
-When built, the slot will be replaced with the `tool.poetry.version` property from `pyproject.toml`, for example:
+When evaluated, the slot will be replaced with the `tool.poetry.version` property from `pyproject.toml`, for example:
 
 ```py
 __version__ = "1.2.3"
@@ -54,6 +54,10 @@ becomes
 
 production = true
 ```
+
+## Evaluating Templates
+
+Poetry Templating will automatically evaluate template slots when building the package distributables with the `poetry build` command. You can also evaluate the project in-place by running the `poetry templating evaluate` command.
 
 ## Constructs
 
