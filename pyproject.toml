@@ -25,7 +25,7 @@ build-backend = "poetry.core.masonry.api"
 templating = "poetry_templating.plugin:TemplatingPlugin"
 
 [tool.poetry-templating]
-exclude = "src/poetry_templating/engine.py"
+exclude = ["src/poetry_templating/engine.py", "tests/*"]
 
 [tool.ruff]
 line-length = 92
