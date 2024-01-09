@@ -14,9 +14,6 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v3
-
       - name: Set up Python
         uses: actions/setup-python@v3
 
@@ -24,7 +21,10 @@ jobs:
         uses: snok/install-poetry@v1
 
       - name: Install Self
-        run: poetry self add ./
+        run: poetry self add git+${{ github.server_url }}/${{ github.repository }}
+
+      - name: Checkout Repo
+        uses: actions/checkout@v3
 
       - name: Build Package Distributions
         run: poetry build
