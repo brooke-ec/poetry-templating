@@ -59,7 +59,6 @@ class TemplatingEngine:
 
     def should_process(self, path: StrPath) -> bool:
         rel = self.relative(path)
-        print(rel)
         return (
             rel.as_posix() not in self.processed
             and matches_any(rel, self.include)
