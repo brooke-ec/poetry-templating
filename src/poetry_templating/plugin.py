@@ -64,20 +64,18 @@ class TemplatingPlugin(ApplicationPlugin):
             self.setup_build(command)
 
     def setup_build(self, command: BuildCommand):
-        from poetry.core.masonry.builder import Builder
-
         # Mixin to point builders to evaluated clone project
         @Mixin.mixin(command, "handle")
         def handler_mixin() -> int:
-            with builder_mixin, self.evaluated_clone(command.io) as poetry:
+            with build_mixin, self.evaluated_clone(command.io) as poetry:
                 command._poetry = poetry
                 return handler_mixin.original()
 
         # Mixin to set the "target_dir" parameter back to the original project
-        @Mixin.mixin(Builder, "build")
-        def builder_mixin(*args, target_dir=None, **kwargs) -> None:
+        @Mixin.mixin(command, "_build")
+        def build_mixin(*args, target_dir=None, **kwargs) -> None:
             target_dir = self.root / DEFAULT_BUILD_DIR
-            builder_mixin.original(*args, **kwargs, target_dir=target_dir)
+            build_mixin.original(*args, **kwargs, target_dir=target_dir)
 
         handler_mixin.inject()  # Inject handler mixin to this instance of BuildCommand
 
