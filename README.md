@@ -128,7 +128,7 @@ Permission is hereby granted ...
 
 ## Configuration
 
-Poetry Templating can be configured in your `pyproject.toml` file under the `tool.poetry_templating` table.
+Poetry Templating can be configured in your `pyproject.toml` file under the `tool.poetry-templating` table.
 
 | key      | default   | description                                                                    |
 | -------- | --------- | ------------------------------------------------------------------------------ |
