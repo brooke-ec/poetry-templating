@@ -52,10 +52,14 @@ class TemplatingPlugin(ApplicationPlugin):
         return [EvaluateCommand]
 
     def activate(self, application: Application):
-        application.event_dispatcher.add_listener(COMMAND, self.on_command)  # type: ignore
-        self.root = Path(os.path.dirname(application.poetry.pyproject.path))
-        self.poetry = application.poetry
-        super().activate(application)
+        try:  # Disable plugin if pyproject could not be found
+            self.root = Path(os.path.dirname(application.poetry.pyproject.path))
+        except RuntimeError:
+            pass
+        else:
+            application.event_dispatcher.add_listener(COMMAND, self.on_command)  # type: ignore
+            self.poetry = application.poetry
+            super().activate(application)
 
     def on_command(self, event: ConsoleCommandEvent, *_) -> None:
         # If command is build command, set up build templating
