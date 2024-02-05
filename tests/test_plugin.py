@@ -12,6 +12,7 @@ import pytest
 from cleo.io.inputs.argv_input import ArgvInput
 from cleo.io.io import IO
 from cleo.io.outputs.stream_output import StreamOutput
+from poetry.console.application import Application
 from poetry.console.application import Application as PoetryApplication
 from poetry.console.commands.build import BuildCommand
 from poetry.factory import Factory
@@ -114,3 +115,17 @@ def test_setup_build():
         application.run(ArgvInput(["", "build"]))
 
     assert executed
+
+
+def test_no_pyproject(basic_io, tmp_venv):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        old_cwd = os.getcwd()
+        os.chdir(tmpdir)
+        try:
+            TemplatingPlugin().activate(Application())
+        except RuntimeError:
+            raise
+        except Exception:
+            pass
+        finally:
+            os.chdir(old_cwd)
