@@ -1,9 +1,10 @@
+import contextlib
 import os
 import shutil
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator, List, Type
+from typing import Iterator, List, Optional, Type
 
 from cleo.events.console_command_event import ConsoleCommandEvent
 from cleo.events.console_events import COMMAND
@@ -78,8 +79,16 @@ class TemplatingPlugin(ApplicationPlugin):
 
         # Mixin to set the "target_dir" parameter back to the original project
         @Mixin.mixin(command, "_build")
-        def build_mixin(*args, target_dir=None, **kwargs) -> None:
-            target_dir = self.root / DEFAULT_BUILD_DIR
+        def build_mixin(*args, target_dir: Optional[Path] = None, **kwargs) -> None:
+            if target_dir is None:  # pragma: no cover
+                # Function is always called with a value
+                target_dir = self.root / DEFAULT_BUILD_DIR
+            else:
+                with contextlib.suppress(ValueError):
+                    target_dir = self.root / target_dir.relative_to(
+                        command.poetry.pyproject_path.parent
+                    )
+
             build_mixin.original(*args, **kwargs, target_dir=target_dir)
 
         handler_mixin.inject()  # Inject handler mixin to this instance of BuildCommand
