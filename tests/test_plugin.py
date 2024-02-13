@@ -76,6 +76,8 @@ def test_build_templating(project_path, basic_io, tmp_venv):
     plugin.root = Path(project_path)
     plugin.poetry = poetry
 
+    basic_io.input._definition = command.definition
+
     plugin.setup_build(command)
     command.execute(basic_io)
 
