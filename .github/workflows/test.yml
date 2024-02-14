@@ -45,6 +45,7 @@ jobs:
 
       - name: Install Poetry from main branch
         run: poetry add git+https://github.com/python-poetry/poetry.git
+        if: github.ref == 'refs/heads/main'
 
       - name: Run unit tests with coverage
         run: poetry run coverage run
